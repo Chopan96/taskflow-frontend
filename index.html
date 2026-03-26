@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TaskFlow App</title>
+</head>
+<body>
+
+<h1>TaskFlow</h1>
+
+<!-- LOGIN -->
+<div id="auth">
+  <h2>Login</h2>
+  <input type="text" id="username" placeholder="Usuario"><br>
+  <input type="password" id="password" placeholder="Contraseña"><br>
+  <button onclick="login()">Login</button>
+  <button onclick="register()">Register</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;">
+  <h2>Mis tareas</h2>
+  <button onclick="logout()">Logout</button>
+  <ul id="tasks"></ul>
+</div>
+
+<script>
+const API_URL = "https://taskflow-j7kn.onrender.com";
+
+// 🔐 Verificar si hay token al cargar
+window.onload = () => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    showDashboard();
+    getTasks();
+  }
+};
+
+// 🔑 LOGIN
+function login() {
+  fetch(`${API_URL}/api/token/`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      username: document.getElementById("username").value,
+      password: document.getElementById("password").value
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.access) {
+      localStorage.setItem("token", data.access);
+      showDashboard();
+      getTasks();
+    } else {
+      alert("Login incorrecto");
+    }
+  });
+}
+
+// 📝 REGISTRO
+function register() {
+  fetch(`${API_URL}/api/register/`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      username: document.getElementById("username").value,
+      password: document.getElementById("password").value
+    })
+  })
+  .then(res => res.json())
+  .then(() => {
+    alert("Usuario creado, ahora inicia sesión");
+  });
+}
+
+// 📋 OBTENER TASKS
+function getTasks() {
+  const token = localStorage.getItem("token");
+
+  fetch(`${API_URL}/api/tasks/`, {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    const list = document.getElementById("tasks");
+    list.innerHTML = "";
+
+    data.forEach(task => {
+      const li = document.createElement("li");
+      li.textContent = `${task.title} - ${task.status}`;
+      list.appendChild(li);
+    });
+  });
+}
+
+// 🔄 UI
+function showDashboard() {
+  document.getElementById("auth").style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
+}
+
+// 🚪 LOGOUT
+function logout() {
+  localStorage.removeItem("token");
+  location.reload();
+}
+</script>
+
+</body>
+</html>
